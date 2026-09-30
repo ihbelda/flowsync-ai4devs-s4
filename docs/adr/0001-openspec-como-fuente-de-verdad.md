@@ -34,7 +34,9 @@ En concreto:
 
 ## Estado
 
-Aceptado — 2026-09-30.
+~~Aceptado — 2026-09-30.~~
+
+Reemplazado por el [ADR 0002](0002-tests-como-fuente-de-verdad-ejecutable.md) — 2027-09-30.
 
 ## Consecuencias
 
