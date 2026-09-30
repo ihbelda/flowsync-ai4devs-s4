@@ -31,6 +31,17 @@ test.group('Tasks | responsable', (group) => {
    */
   const HOY = '2026-09-30'
 
+  /**
+   * Lo único que puede acompañar a una tarea de su responsable, en orden
+   * alfabético para poder compararlo con `Object.keys().sort()`.
+   *
+   * Se comprueba el juego de claves entero y no la ausencia del email, aunque
+   * sea el que el scenario cita: lo que prohíbe es «ningún otro dato de esa
+   * cuenta», y contra una lista cerrada un arreglo que quitara el email dejando
+   * las fechas de la cuenta seguiría fallando, que es lo que debe pasar.
+   */
+  const CLAVES_DEL_RESPONSABLE = ['fullName', 'id', 'initials']
+
   async function sesion(client: any, fullName: string | null, email: string) {
     const user = await User.create({ fullName, email, password: 'secreto123' })
 
@@ -62,6 +73,7 @@ test.group('Tasks | responsable', (group) => {
     lista.assertStatus(200)
     const enLista = buscar(lista.body().data, tarea.id)
     assert.isDefined(enLista, 'la tarea recién creada tiene que venir en la lista')
+    assert.isObject(enLista.assignee, 'la tarea tiene que traer su responsable')
     assert.equal(enLista.assignee.fullName, 'Ada Lovelace')
     assert.equal(enLista.assignee.initials, 'AL')
 
@@ -91,8 +103,8 @@ test.group('Tasks | responsable', (group) => {
     lista.assertStatus(200)
     const enLista = buscar(lista.body().data, tarea.id)
     assert.isDefined(enLista, 'la tarea recién creada tiene que venir en la lista')
-    assert.notProperty(enLista.assignee, 'email')
-    assert.notProperty(enLista.assignee, 'password')
+    assert.isObject(enLista.assignee, 'la tarea tiene que traer su responsable')
+    assert.deepEqual(Object.keys(enLista.assignee).sort(), CLAVES_DEL_RESPONSABLE)
     // No basta con que no haya una clave `email`: el email no puede salir por
     // ninguna otra, ni siquiera de propina.
     assert.notInclude(JSON.stringify(enLista), 'ada@example.com')
@@ -103,8 +115,7 @@ test.group('Tasks | responsable', (group) => {
       .header('Authorization', `Bearer ${token}`)
 
     suelta.assertStatus(200)
-    assert.notProperty(suelta.body().data.assignee, 'email')
-    assert.notProperty(suelta.body().data.assignee, 'password')
+    assert.deepEqual(Object.keys(suelta.body().data.assignee).sort(), CLAVES_DEL_RESPONSABLE)
     assert.notInclude(JSON.stringify(suelta.body().data), 'ada@example.com')
   })
 
