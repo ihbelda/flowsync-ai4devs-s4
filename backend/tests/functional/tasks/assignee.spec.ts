@@ -1,6 +1,7 @@
 import User from '#models/user'
 import Task from '#models/task'
 import { test } from '@japa/runner'
+import type { Assert } from '@japa/assert'
 import testUtils from '@adonisjs/core/services/test_utils'
 
 /**
@@ -27,7 +28,7 @@ test.group('Tasks | responsable', (group) => {
    * El `assignee` de una misma tarea leído suelto y desde la lista. La tarea se
    * crea directamente en el modelo para que estos tests no dependan del alta.
    */
-  async function lecturas(client: any, token: string, assignee: User) {
+  async function lecturas(client: any, assert: Assert, token: string, assignee: User) {
     const task = await Task.create({
       title: 'Revisar el informe',
       status: 'pending',
@@ -44,6 +45,7 @@ test.group('Tasks | responsable', (group) => {
     lista.assertStatus(200)
 
     const enLista = lista.body().data.find((t: { id: number }) => t.id === task.id)
+    assert.exists(enLista, 'la tarea no aparece en la lista')
 
     return {
       suelta: suelta.body().data.assignee,
@@ -54,7 +56,7 @@ test.group('Tasks | responsable', (group) => {
   test('el responsable llega con su nombre y sus iniciales', async ({ client, assert }) => {
     const { user, token } = await sesion(client, 'ada@example.com', 'Ada Lovelace')
 
-    for (const [camino, assignee] of Object.entries(await lecturas(client, token, user))) {
+    for (const [camino, assignee] of Object.entries(await lecturas(client, assert, token, user))) {
       assert.equal(assignee?.fullName, 'Ada Lovelace', `nombre en la tarea ${camino}`)
       assert.equal(assignee?.initials, 'AL', `iniciales en la tarea ${camino}`)
     }
@@ -68,13 +70,15 @@ test.group('Tasks | responsable', (group) => {
     const { user: ada } = await sesion(client, 'ada@example.com', 'Ada Lovelace')
     const { token } = await sesion(client, 'alan@example.com', 'Alan Turing')
 
-    for (const [camino, assignee] of Object.entries(await lecturas(client, token, ada))) {
+    for (const [camino, assignee] of Object.entries(await lecturas(client, assert, token, ada))) {
       assert.isObject(assignee, `assignee en la tarea ${camino}`)
+      // «Ningún otro dato de esa cuenta»: lo único admitido es lo que la identifica.
+      // Va primero para que, si falla, el informe enseñe todas las claves de más
+      // y no solo la primera.
+      assert.containsSubset(['id', 'fullName', 'initials'], Object.keys(assignee))
       assert.notProperty(assignee, 'email', `email en la tarea ${camino}`)
       assert.notProperty(assignee, 'password', `contraseña en la tarea ${camino}`)
       assert.notInclude(JSON.stringify(assignee), 'ada@example.com', `tarea ${camino}`)
-      // «Ningún otro dato de esa cuenta»: lo único admitido es lo que la identifica.
-      assert.containsSubset(['id', 'fullName', 'initials'], Object.keys(assignee))
     }
   })
 
@@ -84,7 +88,7 @@ test.group('Tasks | responsable', (group) => {
   }) => {
     const { user, token } = await sesion(client, 'ada@example.com', null)
 
-    for (const [camino, assignee] of Object.entries(await lecturas(client, token, user))) {
+    for (const [camino, assignee] of Object.entries(await lecturas(client, assert, token, user))) {
       assert.property(assignee, 'fullName', `nombre en la tarea ${camino}`)
       assert.isNull(assignee.fullName, `nombre en la tarea ${camino}`)
       assert.isString(assignee.initials, `iniciales en la tarea ${camino}`)
