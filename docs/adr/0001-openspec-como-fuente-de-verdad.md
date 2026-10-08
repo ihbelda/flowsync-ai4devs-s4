@@ -39,6 +39,8 @@ Falta una decisión explícita sobre qué manda cuando la spec y el código no c
 
 Aceptada, el 2026-10-08.
 
+Reemplazada por el [ADR 0002](0002-tests-como-fuente-de-verdad-ejecutable.md) el 2027-10-08.
+
 Registra a posteriori una práctica que ya se seguía desde los tres changes del 2026-08-13.
 
 ## Consecuencias
